@@ -70,8 +70,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageChange, currentIma
       ) : (
         <div className="text-center text-medium-text">
           <UploadIcon />
-          <p className="mt-2 font-semibold">Click to upload or drag & drop</p>
-          <p className="text-xs">PNG, JPG, or WEBP</p>
+          <p className="mt-2 font-semibold">Nhấp để tải lên hoặc kéo & thả</p>
+          <p className="text-xs">Hỗ trợ PNG, JPG, hoặc WEBP</p>
         </div>
       )}
     </div>

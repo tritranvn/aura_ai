@@ -1,67 +1,68 @@
-
-import { GoogleGenAI, Modality, GenerateContentResponse } from "@google/genai";
 import type { EditedImageResult } from '../types';
 
-// Utility to convert a file to a base64 generative part for the API
-const fileToGenerativePart = async (file: File) => {
-  const base64EncodedDataPromise = new Promise<string>((resolve, reject) => {
+// Utility to convert a file to a base64 string and get its mime type.
+const getFileData = (file: File): Promise<{ imageBase64: string; mimeType: string }> => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === 'string') {
-        // The result includes the data URL prefix "data:image/png;base64,", so we split it off.
-        resolve(reader.result.split(',')[1]);
+        // The result is a data URL: "data:image/png;base64,the_base_64_string"
+        const [header, imageBase64] = reader.result.split(',');
+        if (!header || !imageBase64) {
+             return reject(new Error("Invalid file data format."));
+        }
+        const mimeType = header.match(/:(.*?);/)?.[1] || file.type;
+        resolve({ imageBase64, mimeType });
       } else {
-        reject(new Error("Failed to read file as a data URL."));
+        reject(new Error("Failed to read file."));
       }
     };
     reader.onerror = (error) => reject(error);
     reader.readAsDataURL(file);
   });
-
-  return {
-    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
-  };
 };
+
 
 export const editImageWithNanoBanana = async (
   imageFile: File,
   prompt: string
 ): Promise<EditedImageResult | null> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set the API_KEY environment variable.");
-  }
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const { imageBase64, mimeType } = await getFileData(imageFile);
 
-  const imagePart = await fileToGenerativePart(imageFile);
-  const textPart = { text: prompt };
+    // Call our own serverless function endpoint
+    const response = await fetch('/api/edit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        imageBase64,
+        mimeType,
+        prompt,
+      }),
+    });
 
-  const response: GenerateContentResponse = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image-preview',
-    contents: {
-      parts: [imagePart, textPart],
-    },
-    config: {
-      responseModalities: [Modality.IMAGE, Modality.TEXT],
-    },
-  });
-
-  let newImageUrl: string | null = null;
-  let newText = '';
-
-  // The response can contain multiple parts, iterate through them to find image and text
-  for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.text) {
-      newText += part.text;
-    } else if (part.inlineData) {
-      const { data, mimeType } = part.inlineData;
-      newImageUrl = `data:${mimeType};base64,${data}`;
+    const result = await response.json();
+    
+    if (!response.ok) {
+        // The server responded with an error status (4xx or 5xx)
+        // Use the error message from the server's JSON response if available
+        throw new Error(result.error || `Yêu cầu thất bại với mã trạng thái ${response.status}`);
     }
-  }
 
-  if (newImageUrl) {
-    return { imageUrl: newImageUrl, text: newText.trim() };
-  }
+    // Check if the result has the expected structure
+    if (result.imageUrl) {
+        return result as EditedImageResult;
+    } else {
+        // This case might happen if the server response is 200 OK but doesn't contain an image.
+        console.error("API response was OK but did not contain an image URL.", result);
+        return null;
+    }
 
-  // If no image was returned, return null to indicate failure
-  return null;
+  } catch (error) {
+    console.error("Error editing image:", error);
+    // Re-throw the error so the UI component can catch it and display a message
+    throw error;
+  }
 };

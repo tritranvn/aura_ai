@@ -28,11 +28,11 @@ const App: React.FC = () => {
 
   const handleSubmit = useCallback(async () => {
     if (!originalImageFile) {
-      setError('Please upload an image first.');
+      setError('Vui lòng tải ảnh lên trước.');
       return;
     }
     if (!prompt.trim()) {
-      setError('Please enter an editing instruction.');
+      setError('Vui lòng nhập hướng dẫn chỉnh sửa.');
       return;
     }
 
@@ -45,11 +45,11 @@ const App: React.FC = () => {
       if (result) {
         setEditedResult(result);
       } else {
-        setError('The model did not return an image. Please try a different prompt.');
+        setError('Model không trả về hình ảnh. Vui lòng thử một câu lệnh khác.');
       }
     } catch (e) {
       console.error(e);
-      setError(`An error occurred: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      setError(`Đã xảy ra lỗi: ${e instanceof Error ? e.message : 'Lỗi không xác định'}`);
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +62,7 @@ const App: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Panel: Inputs */}
           <div className="bg-dark-card rounded-xl shadow-2xl p-6 flex flex-col gap-6 border border-dark-border">
-            <h2 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary">1. Upload & Describe</h2>
+            <h2 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary">1. Tải ảnh lên & Mô tả</h2>
             <ImageUploader onImageChange={handleImageChange} currentImageUrl={originalImageUrl} />
             <PromptInput value={prompt} onChange={(e) => setPrompt(e.target.value)} />
             <button
@@ -73,12 +73,12 @@ const App: React.FC = () => {
               {isLoading ? (
                 <>
                   <Spinner />
-                  Generating...
+                  Đang xử lý...
                 </>
               ) : (
                 <>
                   <MagicWandIcon />
-                  Apply Magic
+                  Áp dụng phép thuật
                 </>
               )}
             </button>
@@ -86,17 +86,17 @@ const App: React.FC = () => {
 
           {/* Right Panel: Output */}
           <div className="bg-dark-card rounded-xl shadow-2xl p-6 border border-dark-border flex flex-col items-center justify-center min-h-[400px]">
-            <h2 className="text-2xl font-bold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary">2. View Result</h2>
+            <h2 className="text-2xl font-bold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary">2. Xem kết quả</h2>
             {isLoading && (
               <div className="text-center">
                 <Spinner size="lg" />
-                <p className="mt-4 text-medium-text">Editing your image, please wait...</p>
-                <p className="text-sm text-gray-500">(This can take a moment)</p>
+                <p className="mt-4 text-medium-text">Đang chỉnh sửa ảnh của bạn, vui lòng đợi...</p>
+                <p className="text-sm text-gray-500">(Quá trình này có thể mất một lúc)</p>
               </div>
             )}
             {error && (
               <div className="bg-red-900/50 border border-red-700 text-red-300 p-4 rounded-lg text-center">
-                <p className="font-bold">Error</p>
+                <p className="font-bold">Lỗi</p>
                 <p>{error}</p>
               </div>
             )}
@@ -108,14 +108,14 @@ const App: React.FC = () => {
             )}
             {!isLoading && !error && !editedResult && (
               <div className="text-center text-medium-text">
-                <p>Your edited image will appear here.</p>
+                <p>Ảnh đã chỉnh sửa của bạn sẽ xuất hiện ở đây.</p>
               </div>
             )}
           </div>
         </div>
       </main>
       <footer className="text-center p-4 text-medium-text text-sm">
-        <p>Powered by Google's Gemini API</p>
+        <p>Phát triển với Gemini API của Google</p>
       </footer>
     </div>
   );
